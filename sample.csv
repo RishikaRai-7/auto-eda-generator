@@ -1,0 +1,11 @@
+age,income,gender,purchased,rating
+25,50000,Female,Yes,4.5
+30,60000,Male,No,4.0
+35,80000,Male,Yes,
+45,120000,Female,Yes,5.0
+22,35000,Female,No,3.0
+54,140000,Male,No,4.2
+38,90000,,Yes,4.8
+41,95000,Female,No,
+29,55000,Male,Yes,3.8
+31,62000,Female,Yes,4.1
