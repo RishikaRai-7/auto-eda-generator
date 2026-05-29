@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from eda import run_eda
 from assistant import GeminiAssistant
 from typing import Dict, Any
+from database import SessionLocal, EDAReport
+import json
 
 app = FastAPI(
     title="Auto EDA & Report Generator API",
@@ -448,11 +450,26 @@ async def analyze_file(file: UploadFile = File(...)):
                 }
             ]
         }
-        
+    # NEW: save to database
+    db = SessionLocal()
+    report = EDAReport(
+        filename=file.filename,
+        eda_json=json.dumps(eda_data),
+        insights=json.dumps(analysis)
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+    db.close()
+
     # Generate the minimal, clean HTML report
     html_report = render_html_report(eda_data, analysis)
-    
+
     return {
+        "report_id": report.id,
+        "eda": eda_data,
+        "insights": analysis,
+        "html_report": html_report,
         "summary": eda_data.get("summary"),
         "dtypes": eda_data.get("dtypes"),
         "null_info": eda_data.get("null_info"),
@@ -460,5 +477,38 @@ async def analyze_file(file: UploadFile = File(...)):
         "correlation_matrix": eda_data.get("correlation_matrix"),
         "categorical_stats": eda_data.get("categorical_stats"),
         "gemini_analysis": analysis,
-        "html_report": html_report
     }
+
+@app.get("/api/reports")
+def get_reports():
+    db = SessionLocal()
+    reports = db.query(EDAReport).order_by(EDAReport.created_at.desc()).all()
+    db.close()
+
+    return [
+        {
+            "id": r.id,
+            "filename": r.filename,
+            "created_at": r.created_at.isoformat()
+        }
+        for r in reports
+    ]
+
+@app.get("/api/reports/{report_id}")
+def get_report(report_id: int):
+    db = SessionLocal()
+    report = db.query(EDAReport).filter(EDAReport.id == report_id).first()
+    db.close()
+
+    if not report:
+        return {"error": "Report not found"}
+
+    return {
+        "id": report.id,
+        "filename": report.filename,
+        "eda": json.loads(report.eda_json),
+        "insights": json.loads(report.insights),
+        "created_at": report.created_at.isoformat()
+    }  
+
+    
