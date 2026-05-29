@@ -21,7 +21,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuration for FastAPI Backend
-BACKEND_URL = st.sidebar.text_input("Backend API URL", value="http://localhost:8000")
+BACKEND_URL = st.sidebar.text_input("Backend API URL", value="https://auto-eda-generator-production.up.railway.app")
 st.sidebar.markdown("""
 ### How to Run:
 1. **Start FastAPI Backend**:
